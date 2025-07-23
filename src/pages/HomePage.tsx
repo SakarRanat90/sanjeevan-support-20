@@ -75,7 +75,7 @@ export default function HomePage() {
                   </Link>
                 </Button>
                 <Button variant="outline" size="xl" asChild>
-                  <Link to="/register">Start Monitoring</Link>
+                  <Link to="/auth">Start Monitoring</Link>
                 </Button>
               </div>
 
@@ -204,7 +204,7 @@ export default function HomePage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button variant="secondary" size="xl" asChild>
-                <Link to="/register">Get Started Now</Link>
+                <Link to="/auth">Get Started Now</Link>
               </Button>
               <Button variant="outline" size="xl" className="text-primary-foreground border-primary-foreground hover:bg-primary-foreground hover:text-primary" asChild>
                 <Link to="/contact">Contact Us</Link>

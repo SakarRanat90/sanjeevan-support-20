@@ -1,23 +1,55 @@
-import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Heart } from "lucide-react";
+import { Menu, X, Heart, User, LogOut } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { User as SupabaseUser } from "@supabase/supabase-js";
 
 export const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
   const location = useLocation();
+  const navigate = useNavigate();
 
-  const navItems = [
+  useEffect(() => {
+    // Check current session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setUser(session?.user ?? null);
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const publicNavItems = [
     { name: "Home", href: "/" },
     { name: "Features", href: "/features" },
     { name: "How it Works", href: "/how-it-works" },
-    { name: "Dashboard", href: "/dashboard" },
-    { name: "Register", href: "/register" },
     { name: "About", href: "/about" },
     { name: "Contact", href: "/contact" },
   ];
 
+  const protectedNavItems = [
+    { name: "Dashboard", href: "/dashboard" },
+    { name: "Profile", href: "/profile" },
+    { name: "Vitals", href: "/vitals" },
+    { name: "Medications", href: "/medications" },
+  ];
+
+  const navItems = user ? [...publicNavItems, ...protectedNavItems] : publicNavItems;
+
   const isActive = (href: string) => location.pathname === href;
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate("/");
+  };
 
   return (
     <nav className="bg-card/80 backdrop-blur-md border-b border-border sticky top-0 z-50 shadow-soft">
@@ -52,10 +84,28 @@ export const Navigation = () => {
           </div>
 
           {/* CTA Button */}
-          <div className="hidden md:flex">
-            <Button variant="hero" size="lg" asChild>
-              <Link to="/register">Start Monitoring</Link>
-            </Button>
+          <div className="hidden md:flex items-center gap-4">
+            {user ? (
+              <>
+                <Button variant="ghost" size="icon" asChild>
+                  <Link to="/profile">
+                    <User className="h-5 w-5" />
+                  </Link>
+                </Button>
+                <Button variant="ghost" size="icon" onClick={handleSignOut}>
+                  <LogOut className="h-5 w-5" />
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" asChild>
+                  <Link to="/auth">Sign In</Link>
+                </Button>
+                <Button variant="hero" size="lg" asChild>
+                  <Link to="/auth">Start Monitoring</Link>
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -88,12 +138,30 @@ export const Navigation = () => {
                   {item.name}
                 </Link>
               ))}
-              <div className="pt-4 pb-2">
-                <Button variant="hero" size="lg" className="w-full" asChild>
-                  <Link to="/register" onClick={() => setIsOpen(false)}>
-                    Start Monitoring
-                  </Link>
-                </Button>
+              <div className="pt-4 pb-2 space-y-2">
+                {user ? (
+                  <>
+                    <Button variant="outline" size="lg" className="w-full" asChild>
+                      <Link to="/profile" onClick={() => setIsOpen(false)}>
+                        <User className="h-4 w-4 mr-2" />
+                        Profile
+                      </Link>
+                    </Button>
+                    <Button variant="destructive" size="lg" className="w-full" onClick={() => {
+                      handleSignOut();
+                      setIsOpen(false);
+                    }}>
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Sign Out
+                    </Button>
+                  </>
+                ) : (
+                  <Button variant="hero" size="lg" className="w-full" asChild>
+                    <Link to="/auth" onClick={() => setIsOpen(false)}>
+                      Start Monitoring
+                    </Link>
+                  </Button>
+                )}
               </div>
             </div>
           </div>

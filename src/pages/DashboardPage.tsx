@@ -1,49 +1,62 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
+import { Link } from "react-router-dom";
 import { 
+  Activity, 
   Heart, 
   Thermometer, 
-  Droplets, 
-  Bell, 
-  Clock,
-  TrendingUp,
-  TrendingDown,
-  AlertTriangle,
+  Pill, 
+  User, 
+  AlertTriangle, 
+  TrendingUp, 
+  Calendar,
   CheckCircle,
-  Activity,
-  Download,
-  Calendar
+  Clock,
+  Plus
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
+interface Profile {
+  full_name: string;
+  age: number;
+  blood_group?: string;
+}
+
+interface VitalReading {
+  heart_rate: number;
+  temperature: number;
+  spo2: number;
+  alert_flag: boolean;
+  recorded_at: string;
+}
+
+interface Medication {
+  id: string;
+  medication_name: string;
+  schedule_times: string[];
+  is_active: boolean;
+}
+
+interface MedicationLog {
+  medication_id: string;
+  scheduled_time: string;
+}
+
 export default function DashboardPage() {
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [latestVitals, setLatestVitals] = useState<VitalReading | null>(null);
+  const [medications, setMedications] = useState<Medication[]>([]);
+  const [medicationLogs, setMedicationLogs] = useState<MedicationLog[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-  const [currentTime, setCurrentTime] = useState(new Date());
-  const [vitals, setVitals] = useState({
-    heartRate: 72,
-    temperature: 98.6,
-    spO2: 98,
-    lastUpdated: new Date()
-  });
 
-  // Simulate real-time updates
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-      
-      // Simulate vital changes
-      setVitals(prev => ({
-        heartRate: Math.floor(Math.random() * 20) + 65, // 65-85 bpm
-        temperature: Math.round((Math.random() * 2 + 97.5) * 10) / 10, // 97.5-99.5°F
-        spO2: Math.floor(Math.random() * 5) + 96, // 96-100%
-        lastUpdated: new Date()
-      }));
-    }, 5000);
-
-    return () => clearInterval(timer);
+    loadDashboardData();
   }, []);
 
   const getVitalStatus = (type: string, value: number) => {
