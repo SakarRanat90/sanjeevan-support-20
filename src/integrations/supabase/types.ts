@@ -14,13 +14,182 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      medication_logs: {
+        Row: {
+          created_at: string
+          id: string
+          medication_id: string
+          notes: string | null
+          scheduled_time: string
+          taken_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          medication_id: string
+          notes?: string | null
+          scheduled_time: string
+          taken_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          medication_id?: string
+          notes?: string | null
+          scheduled_time?: string
+          taken_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medication_logs_medication_id_fkey"
+            columns: ["medication_id"]
+            isOneToOne: false
+            referencedRelation: "medications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      medications: {
+        Row: {
+          created_at: string
+          dosage: string
+          end_date: string | null
+          frequency: string
+          id: string
+          is_active: boolean
+          medication_name: string
+          schedule_times: string[] | null
+          start_date: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dosage: string
+          end_date?: string | null
+          frequency: string
+          id?: string
+          is_active?: boolean
+          medication_name: string
+          schedule_times?: string[] | null
+          start_date?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dosage?: string
+          end_date?: string | null
+          frequency?: string
+          id?: string
+          is_active?: boolean
+          medication_name?: string
+          schedule_times?: string[] | null
+          start_date?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          address: string
+          age: number
+          allergy_history: string[] | null
+          blood_group: string | null
+          contact_number: string
+          created_at: string
+          current_medications: string[] | null
+          emergency_contact: string
+          full_name: string
+          gender: string
+          id: string
+          known_diseases: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          age: number
+          allergy_history?: string[] | null
+          blood_group?: string | null
+          contact_number: string
+          created_at?: string
+          current_medications?: string[] | null
+          emergency_contact: string
+          full_name: string
+          gender: string
+          id: string
+          known_diseases?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          age?: number
+          allergy_history?: string[] | null
+          blood_group?: string | null
+          contact_number?: string
+          created_at?: string
+          current_medications?: string[] | null
+          emergency_contact?: string
+          full_name?: string
+          gender?: string
+          id?: string
+          known_diseases?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      vitals: {
+        Row: {
+          alert_flag: boolean
+          created_at: string
+          heart_rate: number
+          id: string
+          recorded_at: string
+          spo2: number
+          temperature: number
+          user_id: string
+        }
+        Insert: {
+          alert_flag?: boolean
+          created_at?: string
+          heart_rate: number
+          id?: string
+          recorded_at?: string
+          spo2: number
+          temperature: number
+          user_id: string
+        }
+        Update: {
+          alert_flag?: boolean
+          created_at?: string
+          heart_rate?: number
+          id?: string
+          recorded_at?: string
+          spo2?: number
+          temperature?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_next_medication_schedule: {
+        Args: { p_user_id: string }
+        Returns: {
+          medication_id: string
+          medication_name: string
+          dosage: string
+          next_time: string
+          next_date: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
