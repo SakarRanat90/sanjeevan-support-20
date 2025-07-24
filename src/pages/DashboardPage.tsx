@@ -16,7 +16,10 @@ import {
   Calendar,
   CheckCircle,
   Clock,
-  Plus
+  Plus,
+  Download,
+  Droplets,
+  Bell
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -59,6 +62,58 @@ export default function DashboardPage() {
     loadDashboardData();
   }, []);
 
+  const loadDashboardData = async () => {
+    try {
+      setIsLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) return;
+
+      // Load profile
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      
+      setProfile(profileData);
+
+      // Load latest vitals
+      const { data: vitalsData } = await supabase
+        .from('vitals')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('recorded_at', { ascending: false })
+        .limit(1)
+        .single();
+      
+      setLatestVitals(vitalsData);
+
+      // Load medications
+      const { data: medicationsData } = await supabase
+        .from('medications')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_active', true);
+      
+      setMedications(medicationsData || []);
+
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Mock vitals data if no real data exists
+  const vitals = latestVitals || {
+    heart_rate: 72,
+    temperature: 98.6,
+    spo2: 98,
+    alert_flag: false,
+    recorded_at: new Date().toISOString()
+  };
+
   const getVitalStatus = (type: string, value: number) => {
     switch (type) {
       case 'heartRate':
@@ -77,15 +132,6 @@ export default function DashboardPage() {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'critical': return 'text-destructive';
-      case 'warning': return 'text-warning';
-      case 'normal': return 'text-success';
-      default: return 'text-muted-foreground';
-    }
-  };
-
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'critical': return <Badge variant="destructive">Critical</Badge>;
@@ -95,7 +141,8 @@ export default function DashboardPage() {
     }
   };
 
-  const medications = [
+  // Mock medication schedule data
+  const medicationSchedule = [
     { name: "Aspirin", time: "8:00 AM", taken: true, nextDue: "8:00 PM" },
     { name: "Metformin", time: "12:00 PM", taken: false, nextDue: "12:00 PM" },
     { name: "Lisinopril", time: "6:00 PM", taken: false, nextDue: "6:00 PM" }
@@ -129,6 +176,14 @@ export default function DashboardPage() {
     });
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen py-8 bg-muted/20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -137,7 +192,7 @@ export default function DashboardPage() {
           <div>
             <h1 className="text-3xl font-bold text-foreground">Health Dashboard</h1>
             <p className="text-muted-foreground">
-              Last updated: {vitals.lastUpdated.toLocaleTimeString()}
+              Last updated: {new Date(vitals.recorded_at).toLocaleTimeString()}
             </p>
           </div>
           <div className="flex gap-3 mt-4 sm:mt-0">
@@ -162,16 +217,16 @@ export default function DashboardPage() {
                   <Heart className="h-5 w-5 text-red-500 mr-2" />
                   Heart Rate
                 </CardTitle>
-                {getStatusBadge(getVitalStatus('heartRate', vitals.heartRate))}
+                {getStatusBadge(getVitalStatus('heartRate', vitals.heart_rate))}
               </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 <div className="flex items-baseline">
-                  <span className="text-3xl font-bold text-foreground">{vitals.heartRate}</span>
+                  <span className="text-3xl font-bold text-foreground">{vitals.heart_rate}</span>
                   <span className="text-muted-foreground ml-2">bpm</span>
                 </div>
-                <Progress value={(vitals.heartRate / 120) * 100} className="h-2" />
+                <Progress value={(vitals.heart_rate / 120) * 100} className="h-2" />
                 <div className="flex items-center text-sm text-muted-foreground">
                   <Activity className="h-4 w-4 mr-1" />
                   Normal range: 60-100 bpm
@@ -214,16 +269,16 @@ export default function DashboardPage() {
                   <Droplets className="h-5 w-5 text-blue-500 mr-2" />
                   Blood Oxygen
                 </CardTitle>
-                {getStatusBadge(getVitalStatus('spO2', vitals.spO2))}
+                {getStatusBadge(getVitalStatus('spO2', vitals.spo2))}
               </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 <div className="flex items-baseline">
-                  <span className="text-3xl font-bold text-foreground">{vitals.spO2}</span>
+                  <span className="text-3xl font-bold text-foreground">{vitals.spo2}</span>
                   <span className="text-muted-foreground ml-2">%</span>
                 </div>
-                <Progress value={vitals.spO2} className="h-2" />
+                <Progress value={vitals.spo2} className="h-2" />
                 <div className="flex items-center text-sm text-muted-foreground">
                   <TrendingUp className="h-4 w-4 mr-1" />
                   Normal range: 95-100%
@@ -243,7 +298,7 @@ export default function DashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {medications.map((med, index) => (
+              {medicationSchedule.map((med, index) => (
                 <div key={index} className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
                   <div>
                     <h4 className="font-medium">{med.name}</h4>
@@ -257,7 +312,7 @@ export default function DashboardPage() {
                       </Badge>
                     ) : (
                       <Button 
-                        variant="medical" 
+                        variant="outline" 
                         size="sm"
                         onClick={() => handleMedicationTaken(med.name)}
                       >
